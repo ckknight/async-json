@@ -8,6 +8,8 @@ var construct = function (Constructor, value) {
     return new Constructor(value);
 };
 
+var beforeExitCallbacks = null;
+
 var asyncEquality = function (beforeExit, value, syncValue) {
     var calls = 0;
     var error;
@@ -21,16 +23,15 @@ var asyncEquality = function (beforeExit, value, syncValue) {
         assert.strictEqual(syncValue, serializedValue);
     });
     
-    var callbacks = beforeExit.callbacks;
-    if (!callbacks) {
-        beforeExit.callbacks = callbacks = [];
+    if (!beforeExitCallbacks) {
+        beforeExitCallbacks = [];
         beforeExit(function () {
-            for (var i = 0; i < callbacks.length; i += 1) {
-                callbacks[i].call(this);
+            for (var i = 0; i < beforeExitCallbacks.length; i += 1) {
+                beforeExitCallbacks[i].call(this);
             }
         });
     }
-    callbacks.push(function () {
+    beforeExitCallbacks.push(function () {
         assert.isNull(error);
         assert.equal(1, calls, 'Ensure callback is called');
     });
@@ -57,9 +58,18 @@ module.exports = {
             asyncEqualityToSync(beforeExit, construct(Number, Math.random()));
             asyncEqualityToSync(beforeExit, construct(Number, Math.floor(1000000 * Math.random())));
         }
+        asyncEqualityToSync(beforeExit, 0);
+        asyncEqualityToSync(beforeExit, 1);
+        asyncEqualityToSync(beforeExit, -1);
+        asyncEqualityToSync(beforeExit, Infinity);
+        asyncEqualityToSync(beforeExit, -Infinity);
+        asyncEqualityToSync(beforeExit, NaN);
     },
     "null": function (beforeExit) {
         asyncEqualityToSync(beforeExit, null);
+    },
+    "date": function (beforeExit) {
+        asyncEqualityToSync(beforeExit, new Date());
     },
     "undefined": function (beforeExit) {
         asyncEqualityToSync(beforeExit, undefined);
