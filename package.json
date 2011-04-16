@@ -6,5 +6,5 @@
   "repository": "git://github.com/ckknight/async-json.git",
   "author": "Cameron Kenneth Knight <ckknight@gmail.com> (http://ckknight.com)",
   "dependencies": {},
-  "main": "index",
+  "main": "index"
 }
