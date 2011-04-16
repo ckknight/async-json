@@ -27,6 +27,7 @@
   * The first is the error that occurred or `null` if there is no error.
   * The second is the result JSON value.
   
+  ----
     var asyncJSON = require('async-json');
     
     asyncJSON.stringify({ some: "data" }, function (err, jsonValue) {
