@@ -1,0 +1,10 @@
+{
+  "name": "async-json",
+  "version": "0.0.1",
+  "description": "An asynchronous version of JSON.stringify",
+  "keywords": ["json", "stringify", "async"],
+  "repository": "git://github.com/ckknight/async-json.git",
+  "author": "Cameron Kenneth Knight <ckknight@gmail.com> (http://ckknight.com)",
+  "dependencies": {},
+  "main": "index",
+}
