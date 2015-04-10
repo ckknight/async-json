@@ -19,10 +19,10 @@ var asyncEquality = function (beforeExit, value, syncValue) {
         if (err || calls > 1) {
             return;
         }
-        
+
         assert.strictEqual(syncValue, serializedValue);
     });
-    
+
     if (!beforeExitCallbacks) {
         beforeExitCallbacks = [];
         beforeExit(function () {
@@ -47,7 +47,7 @@ module.exports = {
         for (var i = 0; i < 65535; i += 1) {
             value += String.fromCharCode(i);
         }
-        
+
         asyncEqualityToSync(beforeExit, value);
         asyncEqualityToSync(beforeExit, construct(String, value));
     },
@@ -108,11 +108,11 @@ module.exports = {
         asyncEquality(beforeExit, function () {
             return {};
         }, JSON.stringify({}));
-        
+
         asyncEquality(beforeExit, function () {
             return [];
         }, JSON.stringify([]));
-        
+
         asyncEquality(beforeExit, [
             function () {
                 return "alpha";
@@ -146,7 +146,7 @@ module.exports = {
             calls += 1;
             assert.strictEqual(error, err);
         });
-        
+
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
@@ -157,13 +157,13 @@ module.exports = {
                 callback(null, {});
             });
         }, JSON.stringify({}));
-        
+
         asyncEquality(beforeExit, function (callback) {
             process.nextTick(function () {
                 callback(null, []);
             });
         }, JSON.stringify([]));
-        
+
         asyncEquality(beforeExit, [
             function (callback) {
                 process.nextTick(function () {
@@ -175,7 +175,7 @@ module.exports = {
     "async function error handling": function (beforeExit) {
         var error = new Error();
         var calls = 0;
-        
+
         asyncJSON.stringify(function (callback) {
             process.nextTick(function () {
                 callback(error);
@@ -184,7 +184,7 @@ module.exports = {
             calls += 1;
             assert.strictEqual(error, err);
         });
-        
+
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
