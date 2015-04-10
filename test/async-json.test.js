@@ -19,10 +19,10 @@ var asyncEquality = function (beforeExit, value, syncValue) {
         if (err || calls > 1) {
             return;
         }
-        
+
         assert.strictEqual(syncValue, serializedValue);
     });
-    
+
     if (!beforeExitCallbacks) {
         beforeExitCallbacks = [];
         beforeExit(function () {
@@ -41,13 +41,21 @@ var asyncEqualityToSync = function (beforeExit, value) {
     asyncEquality(beforeExit, value, JSON.stringify(value));
 };
 
+var range = function (count) {
+    var result = [];
+    for (var i = 0; i < count; ++i) {
+        result.push(i);
+    }
+    return result;
+};
+
 module.exports = {
     "string": function (beforeExit) {
         var value = "";
         for (var i = 0; i < 65535; i += 1) {
             value += String.fromCharCode(i);
         }
-        
+
         asyncEqualityToSync(beforeExit, value);
         asyncEqualityToSync(beforeExit, construct(String, value));
     },
@@ -82,6 +90,7 @@ module.exports = {
     },
     "array": function (beforeExit) {
         asyncEqualityToSync(beforeExit, [1, 2, 3, 4, "hey", "there", null, undefined, true, false, [], {}, ["a", ["b", ["c"], "d"], "e"]]);
+        asyncEqualityToSync(beforeExit, range(10000));
     },
     "object": function (beforeExit) {
         asyncEqualityToSync(beforeExit, {
@@ -103,16 +112,21 @@ module.exports = {
                 }
             }
         });
+        var obj = {};
+        for (var i = 0; i < 10000; ++i) {
+          obj['k' + i] = i;
+        }
+        asyncEqualityToSync(beforeExit, obj);
     },
     "lazy functions": function (beforeExit) {
         asyncEquality(beforeExit, function () {
             return {};
         }, JSON.stringify({}));
-        
+
         asyncEquality(beforeExit, function () {
             return [];
         }, JSON.stringify([]));
-        
+
         asyncEquality(beforeExit, [
             function () {
                 return "alpha";
@@ -124,7 +138,7 @@ module.exports = {
                 return;
             }
         ], JSON.stringify(["alpha", 1, undefined]));
-        
+
         asyncEquality(beforeExit, {
             alpha: function () {
                 return {
@@ -146,7 +160,7 @@ module.exports = {
             calls += 1;
             assert.strictEqual(error, err);
         });
-        
+
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
@@ -157,13 +171,13 @@ module.exports = {
                 callback(null, {});
             });
         }, JSON.stringify({}));
-        
+
         asyncEquality(beforeExit, function (callback) {
             process.nextTick(function () {
                 callback(null, []);
             });
         }, JSON.stringify([]));
-        
+
         asyncEquality(beforeExit, [
             function (callback) {
                 process.nextTick(function () {
@@ -175,7 +189,7 @@ module.exports = {
     "async function error handling": function (beforeExit) {
         var error = new Error();
         var calls = 0;
-        
+
         asyncJSON.stringify(function (callback) {
             process.nextTick(function () {
                 callback(error);
@@ -184,7 +198,7 @@ module.exports = {
             calls += 1;
             assert.strictEqual(error, err);
         });
-        
+
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
