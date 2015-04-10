@@ -124,7 +124,7 @@ module.exports = {
                 return;
             }
         ], JSON.stringify(["alpha", 1, undefined]));
-        
+
         asyncEquality(beforeExit, {
             alpha: function () {
                 return {
