@@ -10,7 +10,7 @@ var construct = function (Constructor, value) {
 
 var beforeExitCallbacks = null;
 
-var asyncEquality = function (beforeExit, value, syncValue) {
+var asyncEqualityNode = function (beforeExit, value, syncValue) {
     var calls = 0;
     var error;
     asyncJSON.stringify(value, function (err, serializedValue) {
@@ -23,18 +23,34 @@ var asyncEquality = function (beforeExit, value, syncValue) {
         assert.strictEqual(syncValue, serializedValue);
     });
 
-    if (!beforeExitCallbacks) {
-        beforeExitCallbacks = [];
-        beforeExit(function () {
-            for (var i = 0; i < beforeExitCallbacks.length; i += 1) {
-                beforeExitCallbacks[i].call(this);
-            }
-        });
-    }
-    beforeExitCallbacks.push(function () {
+    beforeExit(function () {
         assert.isNull(error);
         assert.equal(1, calls, 'Ensure callback is called');
     });
+};
+
+var hasPromise = typeof Promise === 'function';
+var asyncEqualityPromise = function (beforeExit, value, syncValue) {
+    var calls = 0;
+    var error;
+    asyncJSON.stringify(value).then(function (serializedValue) {
+        calls += 1;
+        assert.strictEqual(syncValue, serializedValue);
+    }).then(null, function (err) {
+        error = err;
+    });
+
+    beforeExit(function () {
+        assert.isUndefined(error);
+        assert.equal(1, calls, 'Ensure callback is called');
+    });
+};
+
+var asyncEquality = function (beforeExit, value, syncValue) {
+  asyncEqualityNode(beforeExit, value, syncValue);
+  if (hasPromise) {
+    asyncEqualityPromise(beforeExit, value, syncValue);
+  }
 };
 
 var asyncEqualityToSync = function (beforeExit, value) {
@@ -157,14 +173,28 @@ module.exports = {
         asyncJSON.stringify(function () {
             throw error;
         }, function (err) {
-            calls += 1;
             assert.strictEqual(error, err);
+            calls += 1;
         });
 
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
     },
+    "lazy function error handling (promise)": hasPromise ? function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+        asyncJSON.stringify(function () {
+            throw error;
+        }).then(null, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    } : null,
     "async functions": function (beforeExit) {
         asyncEquality(beforeExit, function (callback) {
             process.nextTick(function () {
@@ -195,12 +225,29 @@ module.exports = {
                 callback(error);
             });
         }, function (err) {
-            calls += 1;
             assert.strictEqual(error, err);
+            calls += 1;
         });
 
         beforeExit(function () {
             assert.strictEqual(1, calls);
         });
-    }
+    },
+    "async function error handling (promise)": hasPromise ? function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+
+        asyncJSON.stringify(function (callback) {
+            process.nextTick(function () {
+                callback(error);
+            });
+        }).then(null, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    } : null
 };
