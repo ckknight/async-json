@@ -53,8 +53,29 @@ var asyncEquality = function (beforeExit, value, syncValue) {
   }
 };
 
+function asThenable(value) {
+    return {
+        then: function (callback) {
+            process.nextTick(function () {
+                callback(value);
+            });
+        }
+    }
+}
+
+function asReject(error) {
+    return {
+        then: function (_, errback) {
+            process.nextTick(function () {
+                errback(error);
+            });
+        }
+    }
+}
+
 var asyncEqualityToSync = function (beforeExit, value) {
     asyncEquality(beforeExit, value, JSON.stringify(value));
+    asyncEquality(beforeExit, asThenable(value), JSON.stringify(value));
 };
 
 var range = function (count) {
@@ -108,6 +129,9 @@ module.exports = {
         asyncEqualityToSync(beforeExit, [1, 2, 3, 4, "hey", "there", null, undefined, true, false, [], {}, ["a", ["b", ["c"], "d"], "e"]]);
         asyncEqualityToSync(beforeExit, range(10000));
     },
+    "array (thenables)": function (beforeExit) {
+        asyncEquality(beforeExit, [asThenable(1), asThenable([asThenable(2)])], JSON.stringify([1, [2]]));
+    },
     "object": function (beforeExit) {
         asyncEqualityToSync(beforeExit, {
             alpha: 1,
@@ -133,6 +157,21 @@ module.exports = {
           obj['k' + i] = i;
         }
         asyncEqualityToSync(beforeExit, obj);
+    },
+    "object (thenables)": function (beforeExit) {
+        asyncEquality(beforeExit, {
+            a: asThenable({
+              b: asThenable({
+                c: asThenable('d')
+              })
+            })
+        }, JSON.stringify({
+          a: {
+            b: {
+              c: 'd'
+            }
+          }
+        }));
     },
     "lazy functions": function (beforeExit) {
         asyncEquality(beforeExit, function () {
@@ -167,6 +206,39 @@ module.exports = {
             }
         }, JSON.stringify({ alpha: { bravo: { charlie: "delta" } } }));
     },
+    "lazy functions returning thenables": function (beforeExit) {
+        asyncEquality(beforeExit, function () {
+            return asThenable({});
+        }, JSON.stringify({}));
+
+        asyncEquality(beforeExit, function () {
+            return asThenable([]);
+        }, JSON.stringify([]));
+
+        asyncEquality(beforeExit, [
+            function () {
+                return asThenable("alpha");
+            },
+            function () {
+                return asThenable(1);
+            },
+            function () {
+                return asThenable(undefined);
+            }
+        ], JSON.stringify(["alpha", 1, undefined]));
+
+        asyncEquality(beforeExit, {
+            alpha: function () {
+                return asThenable({
+                    bravo: function () {
+                        return asThenable({
+                            charlie: "delta"
+                        });
+                    }
+                });
+            }
+        }, JSON.stringify({ alpha: { bravo: { charlie: "delta" } } }));
+    },
     "lazy function error handling": function (beforeExit) {
         var error = new Error();
         var calls = 0;
@@ -181,11 +253,39 @@ module.exports = {
             assert.strictEqual(1, calls);
         });
     },
+    "lazy functions returning rejecting thenables error handling": function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+        asyncJSON.stringify(function () {
+            return asReject(error);
+        }, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    },
     "lazy function error handling (promise)": hasPromise ? function (beforeExit) {
         var error = new Error();
         var calls = 0;
         asyncJSON.stringify(function () {
             throw error;
+        }).then(null, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    } : null,
+    "lazy function returning rejecting thenables error handling (promise)": hasPromise ? function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+        asyncJSON.stringify(function () {
+            return asReject(error);
         }).then(null, function (err) {
             assert.strictEqual(error, err);
             calls += 1;
@@ -216,6 +316,27 @@ module.exports = {
             },
         ], JSON.stringify(["alpha"]));
     },
+    "async functions with thenables": function (beforeExit) {
+        asyncEquality(beforeExit, function (callback) {
+            process.nextTick(function () {
+                callback(null, asThenable({}));
+            });
+        }, JSON.stringify({}));
+
+        asyncEquality(beforeExit, function (callback) {
+            process.nextTick(function () {
+                callback(null, asThenable([]));
+            });
+        }, JSON.stringify([]));
+
+        asyncEquality(beforeExit, [
+            function (callback) {
+                process.nextTick(function () {
+                    callback(null, asThenable("alpha"));
+                });
+            },
+        ], JSON.stringify(["alpha"]));
+    },
     "async function error handling": function (beforeExit) {
         var error = new Error();
         var calls = 0;
@@ -233,6 +354,23 @@ module.exports = {
             assert.strictEqual(1, calls);
         });
     },
+    "async function with thenable error handling": function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+
+        asyncJSON.stringify(function (callback) {
+            process.nextTick(function () {
+                callback(null, asReject(error));
+            });
+        }, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    },
     "async function error handling (promise)": hasPromise ? function (beforeExit) {
         var error = new Error();
         var calls = 0;
@@ -240,6 +378,23 @@ module.exports = {
         asyncJSON.stringify(function (callback) {
             process.nextTick(function () {
                 callback(error);
+            });
+        }).then(null, function (err) {
+            assert.strictEqual(error, err);
+            calls += 1;
+        });
+
+        beforeExit(function () {
+            assert.strictEqual(1, calls);
+        });
+    } : null,
+    "async function error handling with thenable (promise)": hasPromise ? function (beforeExit) {
+        var error = new Error();
+        var calls = 0;
+
+        asyncJSON.stringify(function (callback) {
+            process.nextTick(function () {
+                callback(null, asReject(error));
             });
         }).then(null, function (err) {
             assert.strictEqual(error, err);
