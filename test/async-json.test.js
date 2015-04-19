@@ -34,7 +34,7 @@ var asyncEqualityNode = function(beforeExit, value, syncValue) {
     assert.isNull(error);
     assert.equal(1, calls, 'Ensure callback is called');
   });
-  assert.equal(0, calls, 'Ensure callback is called');
+  assert.equal(0, calls, 'Ensure callback is called asynchronously');
 };
 
 var hasPromise = typeof Promise === 'function';
@@ -52,7 +52,7 @@ var asyncEqualityPromise = function(beforeExit, value, syncValue) {
     assert.isUndefined(error);
     assert.equal(1, calls, 'Ensure callback is called');
   });
-  assert.equal(0, calls, 'Ensure callback is called');
+  assert.equal(0, calls, 'Ensure callback is called asynchronously');
 };
 
 var asyncEquality = function(beforeExit, value, syncValue) {
