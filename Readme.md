@@ -74,6 +74,20 @@
   JavaScript lacks the concept of background threads, this may cause the program to freeze while the value is being
   computed.
 
+  You can also return Promises (or any thenable) from your functions which will be used to try to resolve the eventual value to then serialize.
+
+      var asyncJSON = require('async-json');
+
+      asyncJSON.stringify({ some: function() {
+        return Promise.resolve("hard to compute data");
+      } }, function (err, jsonValue) {
+          if (err) {
+              throw err;
+          }
+
+          jsonValue === '{"some":"hard to compute data"}';
+      });
+
   *Note: it is perfectly acceptable to return an object that contains another function, it will be calculated through
   the same process.*
 
@@ -119,6 +133,8 @@
     });
 
   This will invoke the async callback one second after calling `stringify` with the obvious result.
+
+  Promises (or thenables) can also be provided to the callback, which will be appropriately resolved.
 
 ## Running Tests
 
