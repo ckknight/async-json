@@ -46,7 +46,9 @@
         assert(jsonValue === '{"some":"data"}');
     });
 
-  In the previous case, the callback is invoked immediately, as no asynchronous functions were found.
+  The callback is guaranteed to fire no earlier than the next tick, so any synchronous code after calling `.stringify` will execute before the callback.
+
+  If a large object or array is passed in, the stringifier may occasionally pause a tick so the execution thread isn't continuously blocked.
 
   In the first argument, if a function is found, rather than skipping it as `JSON` does, it is invoked.
 

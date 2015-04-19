@@ -1,5 +1,9 @@
 /*jshint strict: false */
 
+if (process.env.BLUEBIRD) {
+    global.Promise = require('bluebird');
+}
+
 var assert = require("assert"),
     asyncJSON = require("../index");
 
@@ -24,9 +28,13 @@ var asyncEqualityNode = function (beforeExit, value, syncValue) {
     });
 
     beforeExit(function () {
+        if (error) {
+          console.error(error.stack || error);
+        }
         assert.isNull(error);
         assert.equal(1, calls, 'Ensure callback is called');
     });
+    assert.equal(0, calls, 'Ensure callback is called');
 };
 
 var hasPromise = typeof Promise === 'function';
@@ -44,6 +52,7 @@ var asyncEqualityPromise = function (beforeExit, value, syncValue) {
         assert.isUndefined(error);
         assert.equal(1, calls, 'Ensure callback is called');
     });
+    assert.equal(0, calls, 'Ensure callback is called');
 };
 
 var asyncEquality = function (beforeExit, value, syncValue) {
