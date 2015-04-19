@@ -95,6 +95,10 @@ var range = function(count) {
   return result;
 };
 
+var DEFAULT_THIS = (function () {
+  return this;
+}());
+
 module.exports = {
   "string": function(beforeExit) {
     var value = "";
@@ -186,34 +190,44 @@ module.exports = {
   },
   "lazy functions": function(beforeExit) {
     asyncEquality(beforeExit, function() {
+      assert.equal(DEFAULT_THIS, this);
       return {};
     }, JSON.stringify({}));
 
     asyncEquality(beforeExit, function() {
+      assert.equal(DEFAULT_THIS, this);
       return [];
     }, JSON.stringify([]));
 
-    asyncEquality(beforeExit, [
+    var array;
+    asyncEquality(beforeExit, array = [
       function() {
+        assert.equal(array, this);
         return "alpha";
       },
       function() {
+        assert.equal(array, this);
         return 1;
       },
       function() {
+        assert.equal(array, this);
         return;
       }
     ], JSON.stringify(["alpha", 1, undefined]));
 
-    asyncEquality(beforeExit, {
+    var outerObject;
+    asyncEquality(beforeExit, outerObject = {
       alpha: function() {
-        return {
+        assert.equal(outerObject, this);
+        var innerObject = {
           bravo: function() {
+            assert.equal(innerObject, this);
             return {
               charlie: "delta"
             };
           }
         };
+        return innerObject;
       }
     }, JSON.stringify({
       alpha: {

@@ -76,6 +76,8 @@
   JavaScript lacks the concept of background threads, this may cause the program to freeze while the value is being
   computed.
 
+  Functions will be invoked with their `this` context as the object they are part of, just as a normal method.
+
   You can also return Promises (or any thenable) from your functions which will be used to try to resolve the eventual value to then serialize.
 
       var asyncJSON = require('async-json');
