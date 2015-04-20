@@ -188,6 +188,56 @@ module.exports = {
       }
     }));
   },
+  "object with tainted property": Object.defineProperty ? function(beforeExit) {
+    var obj = {};
+    var error = new Error();
+    Object.defineProperty(obj, 'key', {
+      get: function () {
+        throw error;
+      },
+      enumerable: true
+    })
+    var calls = 0;
+
+    asyncJSON.stringify(obj, function (err) {
+      assert.strictEqual(error, err);
+      ++calls;
+    });
+
+    beforeExit(function() {
+      assert.strictEqual(1, calls);
+    });
+  } : null,
+  "object with tainted property after async": Object.defineProperty ? function(beforeExit) {
+    var obj = {
+      init: function (callback) {
+        process.nextTick(function () {
+          try {
+            callback(null, 'value');
+          } catch (e) {
+            throw new Error("should not reach here");
+          }
+        });
+      }
+    };
+    var error = new Error();
+    Object.defineProperty(obj, 'key', {
+      get: function () {
+        throw error;
+      },
+      enumerable: true
+    })
+    var calls = 0;
+
+    asyncJSON.stringify(obj, function (err) {
+      assert.strictEqual(error, err);
+      ++calls;
+    });
+
+    beforeExit(function() {
+      assert.strictEqual(1, calls);
+    });
+  } : null,
   "lazy functions": function(beforeExit) {
     asyncEquality(beforeExit, function() {
       assert.equal(DEFAULT_THIS, this);
@@ -441,5 +491,14 @@ module.exports = {
     beforeExit(function() {
       assert.strictEqual(1, calls);
     });
+  } : null,
+  "symbols are ignored as keys": typeof Symbol === 'function' ? function(beforeExit) {
+    var obj = {};
+    obj[Symbol('key')] = 'value';
+    asyncEqualityToSync(beforeExit, obj);
+  } : null,
+  "symbols are ignored as keys": typeof Symbol === 'function' ? function(beforeExit) {
+    var obj = { key: Symbol('value') };
+    asyncEqualityToSync(beforeExit, obj);
   } : null
 };
