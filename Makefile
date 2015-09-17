@@ -1,4 +1,4 @@
-TEST = support/expresso/bin/expresso
+TEST = node_modules/expresso/bin/expresso
 TESTS ?= test/*.test.js
 SRC = $(shell find lib -type f -name "*.js")
 
