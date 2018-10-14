@@ -10,11 +10,11 @@
 
   Assuming you are using node.js:
 
-  The easiest way to install is through [npm](http://npmjs.org/).
+  The easiest way to install is through [npm](https://www.npmjs.com/package/async-json).
 
     $ npm install async-json
 
-  Alternatively, you can pull from [github](https://github.com/ckknight/async-json) and place where necessary.
+  Alternatively, you can pull from [GitHub](https://github.com/ckknight/async-json) and place where necessary.
 
 ## API
 
